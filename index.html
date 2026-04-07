@@ -572,4 +572,78 @@
   window.buyPaidPush = buyPaidPush;
 </script>
 </body>
+</html>      let pushed = data.pushedStars || 0;
+      let available = purchased - pushed;
+      if (available < starsToPush) { showFloatingMessage(`❌ Not enough stars! Available: ${available}`, "#d32f2f", true); return; }
+      db.ref("users/"+SECRET_USER_ID+"/balance").transaction(currentBalance => { if(currentBalance === null || currentBalance < price) return; return currentBalance - price; }).then(res => {
+        if(res.committed){
+          db.ref("users/"+SECRET_USER_ID+"/pushedStars").transaction(current => (current || 0) + starsToPush).then(() => {
+            db.ref("paidpush").push({ userId: SECRET_USER_ID, displayName: CURRENT_DISPLAY_NAME, chatId: CURRENT_CHAT_ID, name: target, plan: planName, stars: starsToPush, amount: price, status: "approved", timestamp: Date.now() });
+            sendToTelegram(`📦 STARS PUSHED\n👤 ${CURRENT_DISPLAY_NAME}\n⭐ ${starsToPush} Stars → ${target}`);
+            showFloatingMessage(`✅ ${starsToPush} Stars pushed to ${target}!`, "#22c55e");
+            loadPaidHistory();
+          });
+        } else showFloatingMessage("Transaction failed", "#d32f2f", true);
+      });
+    });
+  }
+  
+  let globalChatRoomId = null;
+  function initChat() { if(!SECRET_USER_ID) return; globalChatRoomId = `support_${SECRET_USER_ID}`; db.ref("global_chats/"+globalChatRoomId+"/messages").on("value", snap=> renderChat(snap.val())); }
+  function renderChat(msgs) {
+    let container = document.getElementById("globalChatMessages");
+    if(!msgs) { container.innerHTML="<div style='text-align:center;color:gray;'>💬 No messages</div>"; return; }
+    let arr = Object.entries(msgs).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.time||0)-(b.time||0));
+    let html="";
+    for(let m of arr){
+      let isMe = (m.sender===SECRET_USER_ID);
+      let sender = isMe ? "You" : (m.senderDisplayName||"Admin");
+      let time = m.time ? new Date(m.time).toLocaleTimeString() : "";
+      html += `<div class="message-bubble ${isMe?'me':''}"><div>${escapeHtml(sender)}</div><div>${escapeHtml(m.text)}</div><div style="font-size:9px;">${time}</div></div>`;
+    }
+    container.innerHTML=html; container.scrollTop=container.scrollHeight;
+  }
+  function sendGlobalMessage() {
+    let txt = document.getElementById("globalChatInput").value.trim();
+    if(!txt||!globalChatRoomId) return;
+    db.ref("global_chats/"+globalChatRoomId+"/messages").push({ sender:SECRET_USER_ID, senderDisplayName:CURRENT_DISPLAY_NAME, text:txt, time:Date.now() });
+    document.getElementById("globalChatInput").value="";
+    sendToTelegram(`💬 MSG from ${CURRENT_DISPLAY_NAME}: ${txt.substring(0,150)}`);
+  }
+  
+  function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+  
+  window.openMenu = function(type){
+    document.getElementById("mainContent").style.display="none";
+    document.getElementById("menuSection").style.display="block";
+    let div = document.getElementById("menuContent");
+    if(type==="paid"){
+      div.innerHTML = `<div class="back-nav"><div class="back-icon" onclick="closeMenu()">⬅️</div><div class="section-title">📢 PAID PUSH</div></div><div class="total-stars-card"><div class="stars-label">✨ YOUR STAR BALANCE ✨</div><div class="star-part"><div class="star-part-item"><div class="part-label">🛒 PURCHASED</div><div class="part-value" id="purchasedStarsCount">0</div></div><div class="star-part-item"><div class="part-label">📤 PUSHED</div><div class="part-value" id="pushedStarsCount">0</div></div></div><div style="margin-top: 10px; font-size: 20px; font-weight: bold; background: #00000066; padding: 8px; border-radius: 30px;">⭐ AVAILABLE: <span id="availableStarsCount" style="color:#facc15;">0</span> ⭐</div></div><input id="pp_name" placeholder="🎯 Enter Target FF Username / UID"><div class="item"><span>📤 Push 20 Stars - ₹80</span><button class="buy" onclick="buyPaidPush(80,20,'20 Stars Push')">PUSH</button></div><div class="item"><span>📤 Push 50 Stars - ₹190</span><button class="buy" onclick="buyPaidPush(190,50,'50 Stars Push')">PUSH</button></div><div class="item"><span>📤 Push 100 Stars - ₹350</span><button class="buy" onclick="buyPaidPush(350,100,'100 Stars Push')">PUSH</button></div><div class="item"><span>📤 Push 250 Stars - ₹800</span><button class="buy" onclick="buyPaidPush(800,250,'250 Stars Push')">PUSH</button></div><div class="item"><span>📤 Push 500 Stars - ₹1500</span><button class="buy" onclick="buyPaidPush(1500,500,'500 Stars Push')">PUSH</button></div><div class="warning-note">⚠️ You need sufficient purchased stars.</div><h4>📋 PUSH HISTORY</h4><div id="paidHistory"></div>`;
+      loadPaidHistory();
+      db.ref("users/"+SECRET_USER_ID).on("value", snap => {
+        let d = snap.val() || {};
+        if(document.getElementById("purchasedStarsCount")) document.getElementById("purchasedStarsCount").innerText = d.purchasedStars||0;
+        if(document.getElementById("pushedStarsCount")) document.getElementById("pushedStarsCount").innerText = d.pushedStars||0;
+        let av = (d.purchasedStars||0) - (d.pushedStars||0);
+        if(document.getElementById("availableStarsCount")) document.getElementById("availableStarsCount").innerText = av<0?0:av;
+      });
+    } else {
+      div.innerHTML = `<div class="back-nav"><div class="back-icon" onclick="closeMenu()">⬅️</div><div class="section-title">💧 DRIP CLIENT</div></div><div class="item"><span>📅 1 Day - ₹75</span><button class="buy" onclick="buyDrip(75,'1 Day Drip')">BUY</button></div><div class="item"><span>📅 7 Days - ₹290</span><button class="buy" onclick="buyDrip(290,'7 Days Drip')">BUY</button></div><div class="item"><span>📅 15 Days - ₹500</span><button class="buy" onclick="buyDrip(500,'15 Days Drip')">BUY</button></div><div class="item"><span>📅 30 Days - ₹900</span><button class="buy" onclick="buyDrip(900,'30 Days Drip')">BUY</button></div><div class="item"><span>🔥 60 Days - ₹1600</span><button class="buy" onclick="buyDrip(1600,'60 Days Drip')">BUY</button></div><h4>📋 HISTORY & KEYS</h4><div id="dripHistory"></div>`;
+      loadDripHistory();
+    }
+  };
+  function closeMenu(){ document.getElementById("menuSection").style.display="none"; document.getElementById("mainContent").style.display="block"; }
+  
+  window.openDepositDrawer = openDepositDrawer;
+  window.closeDepositDrawer = closeDepositDrawer;
+  window.submitDepositWithScreenshot = submitDepositWithScreenshot;
+  window.generateDynamicQR = generateDynamicQR;
+  window.saveQRToGallery = saveQRToGallery;
+  window.closeMenu = closeMenu;
+  window.sendGlobalMessage = sendGlobalMessage;
+  window.openEditName = openEditName;
+  window.buyDrip = buyDrip;
+  window.buyPaidPush = buyPaidPush;
+</script>
+</body>
 </html>
