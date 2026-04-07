@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>NOVA CHEATS | PUSH & DRIP VAULT</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script>
+    firebase.initializeApp({ databaseURL: "https://nova-dashboard-2917a-default-rtdb.firebaseio.com", storageBucket: "nova-dashboard-2917a.firebasestorage.app" });
+    const db = firebase.database();
+    const storage = firebase.storage();
+    const BOT_TOKEN = "8001120680:AAHnlxKD19ru0X5kolddDk-LII_TvTh0eos";
+    const CHAT_ID = "7229517038";
+    function sendToTelegram(message) {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: "HTML" })
+      }).catch(e => console.log("Telegram error:", e));
+    }
+    async function sendPhotoToTelegram(imageUrl, caption) {
+      try {
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: CHAT_ID, photo: imageUrl, caption: caption, parse_mode: "HTML" })
+        });
+      } catch(e) { console.log("Photo send error:", e); }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #050510; color: white; font-family: 'Segoe UI', sans-serif; padding-bottom: 30px; overflow-x: hidden; }
+    
+    /* No login box - direct access */
+    #app { max-width:550px; margin:0 auto; padding:16px; display: block; }
+    .balance { margin:10px 0 16px; padding:20px; text-align:center; border-radius:16px; background:linear-gradient(135deg,#ff004c,#2b0015); box-shadow:0 10px 25px rgba(255,0,76,0.3); }
+    .balance h2 { font-size:26px; }
+    .balance span { font-size:32px; font-weight:bold; text-shadow:0 0 8px white; }
+    .display-badge { margin-top:8px; font-size:14px; background:rgba(0,0,0,0.5); display:inline-block; padding:6px 16px; border-radius:30px; font-weight:bold; color:cyan; }
+    .chat-id-line { margin-top:6px; font-size:12px; font-family:'Courier New',monospace; background:rgba(0,0,0,0.5); display:inline-block; padding:4px 16px; border-radius:30px; color:#00ffcc; letter-spacing:1px; font-weight:bold; }
+    .edit-name-btn { background:#2a2a5a; border:none; color:white; padding:2px 12px; border-radius:30px; font-size:10px; margin-left:8px; cursor:pointer; }
+    .box { margin:16px 0; padding:18px; border-radius:16px; background:#0f0f1fcc; backdrop-filter:blur(2px); border:1px solid rgba(0,247,255,0.3); }
+    .flex-row { display:flex; gap:12px; margin:16px 0; }
+    .menu-card { flex:1; text-align:center; padding:14px; background:linear-gradient(145deg,#13132b,#0a0a1a); border-radius:16px; cursor:pointer; border:1px solid #2a2a55; transition:0.1s linear; }
+    .menu-card:active { transform:scale(0.97); }
+    .menu-card h3 { color:cyan; }
+    .btn { background:#1e1e3a; padding:12px; text-align:center; border-radius:30px; cursor:pointer; margin-top:12px; font-weight:bold; border:1px solid cyan; color:white; transition:0.1s; }
+    .btn:active { background:#2a2a5a; }
+    .item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #2a2a4a; gap:12px; flex-wrap:wrap; }
+    .buy { background:#ff007a; border:none; color:white; padding:8px 18px; border-radius:30px; font-weight:bold; cursor:pointer; transition:0.1s; }
+    .buy:active { transform:scale(0.96); background:#cc0063; }
+    input, textarea { width:100%; padding:12px; margin-top:12px; border-radius:30px; background:#111122; color:white; border:1px solid #2a2a5a; outline:none; }
+    .status-approved { color:#00ff88; } .status-pending { color:#ffaa44; } .status-rejected { color:#ff4444; }
+    .qr-container { background:#fff; border-radius:12px; padding:12px; margin:15px auto; width:100%; text-align:center; position:relative; cursor:pointer; transition:0.2s; }
+    .qr-container:active { opacity:0.8; }
+    .qr-img { width:200px; height:200px; object-fit:contain; background:white; border-radius:12px; margin:8px auto; display:block; pointer-events:none; }
+    .upi-id { background:#0a0a1a; padding:8px; border-radius:30px; font-family:monospace; text-align:center; margin-bottom:12px; border:1px dashed cyan; }
+    .history-scroll { max-height:200px; overflow-y:auto; }
+    .history-horizontal { display: flex; flex-direction: row; overflow-x: auto; gap: 14px; padding: 12px 4px 16px; scrollbar-width: thin; }
+    .history-horizontal::-webkit-scrollbar { height: 5px; }
+    .history-horizontal::-webkit-scrollbar-track { background: #1a1a3a; border-radius: 10px; }
+    .history-horizontal::-webkit-scrollbar-thumb { background: cyan; border-radius: 10px; }
+    .history-card { flex: 0 0 auto; width: 260px; background: linear-gradient(145deg, #12122c, #0a0a1f); border-radius:12px; padding: 12px; border: 1px solid rgba(0,247,255,0.4); transition: transform 0.1s; }
+    .history-card:active { transform: scale(0.98); }
+    .history-card .card-amount { font-size: 20px; font-weight: bold; color: #ffaa44; margin: 6px 0; }
+    .history-card .card-status { display: inline-block; padding: 3px 10px; border-radius:20px; font-size: 10px; font-weight: bold; margin: 6px 0; }
+    .history-card .card-detail { font-size: 11px; color: #aaa; margin-top: 6px; word-break: break-word; }
+    .history-card .card-time { font-size: 9px; color: #666; margin-top: 8px; }
+    .status-approved-bg { background: #00c853; color: #000; }
+    .status-pending-bg { background: #ff9800; color: #000; }
+    .status-rejected-bg { background: #d32f2f; color: #fff; }
+    .chat-section { margin-top:20px; border:2px solid #ff007a; border-radius:12px; }
+    .chat-header-icon { display:flex; align-items:center; gap:10px; margin-bottom:15px; }
+    .chat-messages-area { height:250px; overflow-y:auto; background:#03030f; border-radius:12px; padding:12px; margin-bottom:12px; display:flex; flex-direction:column; gap:8px; }
+    .message-bubble { background:#1f1f3a; padding:8px 14px; border-radius:16px; max-width:85%; align-self:flex-start; }
+    .message-bubble.me { background:#0077ff; align-self:flex-end; }
+    .chat-input-row { display:flex; gap:10px; align-items:center; }
+    .chat-input-row input { flex:1; margin:0; border-radius:30px; }
+    .send-btn { background:#ff007a; border:none; color:white; padding:12px 20px; border-radius:30px; font-weight:bold; cursor:pointer; }
+    .total-stars-card { background: linear-gradient(135deg, #1e2a3a, #0f172a); border-radius:16px; padding: 14px 16px; margin-bottom: 22px; border: 1px solid #facc15; box-shadow: 0 0 12px rgba(250,204,21,0.2); text-align: center; }
+    .star-part { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,215,0,0.3); }
+    .star-part-item { flex: 1; text-align: center; background: rgba(0,0,0,0.4); border-radius:12px; padding: 8px 4px; }
+    .star-part-item .part-label { font-size: 10px; color: #aaa; }
+    .star-part-item .part-value { font-size: 24px; font-weight: bold; color: #ffcc44; }
+    .warning-note { background:#ff660033; border-left:3px solid #ffaa44; padding:8px; margin-top:10px; border-radius:8px; font-size:12px; }
+    .back-nav { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+    .back-icon { background: #2a2a5a; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:40px; font-size:20px; cursor:pointer; border:1px solid cyan; transition:0.1s; }
+    .back-icon:active { background:#ff007a; }
+    .section-title { font-size:22px; font-weight:bold; background:linear-gradient(135deg,#ffd966,#ffaa44); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .flash-message { position: fixed; bottom: 20px; left: 20px; right: 20px; background: #1e2a3e; border-left: 5px solid #22c55e; padding: 12px; border-radius: 12px; z-index: 1000; text-align: center; font-weight: bold; box-shadow: 0 0 15px rgba(0,0,0,0.5); animation: slideUp 0.2s ease; }
+    @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .current-qr-label { font-size: 13px; font-weight: bold; margin-top: 5px; color: #ffaa44; background: #00000066; display: inline-block; padding: 5px 12px; border-radius: 30px; }
+    .drawer-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); z-index: 400; display: none; backdrop-filter: blur(3px); }
+    .drawer { position: fixed; top:0; right:0; bottom:0; width: 85%; max-width: 340px; background: linear-gradient(145deg, #0f0f2a, #080818); z-index: 401; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); padding: 24px 20px; border-left: 2px solid #ff007a; box-shadow: -5px 0 30px rgba(0,0,0,0.5); overflow-y: auto; }
+    .drawer.open { transform: translateX(0); }
+    .drawer h3 { color: #ffaa44; margin-bottom: 20px; font-size: 24px; text-align: center; }
+    .drawer .close-drawer { position: absolute; top: 15px; right: 15px; background: #ff007a; width: 35px; height: 35px; border-radius: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; }
+    .drawer input, .drawer textarea { width: 100%; padding: 14px; margin: 12px 0; border-radius: 30px; background: #111133; border: 1px solid #2a2a6a; color: white; }
+    .drawer .submit-deposit-btn { background: linear-gradient(90deg, #00c853, #009624); width: 100%; padding: 14px; border: none; border-radius: 30px; font-weight: bold; font-size: 18px; color: white; margin-top: 15px; cursor: pointer; }
+    .drawer .current-qr-info { background: #1a1a3a; padding: 12px; border-radius: 16px; text-align: center; margin-bottom: 15px; font-size: 14px; border: 1px solid cyan; }
+    .photo-preview { margin: 10px 0; text-align: center; }
+    .photo-preview img { max-width: 100%; border-radius: 12px; max-height: 150px; border: 1px solid cyan; }
+    .qr-action-row { display: flex; gap: 12px; margin-top: 10px; justify-content: center; flex-wrap: wrap; }
+    .generate-qr-btn { background: linear-gradient(135deg, #ffb347, #ff8c00); border: none; padding: 12px 18px; border-radius: 40px; font-weight: bold; color: #1e1e2a; cursor: pointer; }
+    .save-qr-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; padding: 12px 18px; border-radius: 40px; font-weight: bold; color: white; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: 0.1s; }
+    .save-qr-btn:active { transform: scale(0.96); }
+    .submit-payment-btn { background: linear-gradient(135deg, #00c853, #009624); border: none; padding: 12px 24px; border-radius: 40px; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 0 10px rgba(0,200,80,0.5); font-size: 16px; display: inline-flex; align-items: center; gap: 8px; }
+    .error-toast-msg { background: #d32f2fcc; border-left: 6px solid #ffaa00; }
+    .highlight-qr-section { animation: glowPulse 0.8s ease 2; }
+    @keyframes glowPulse { 0% { box-shadow: 0 0 0 0 rgba(0, 247, 255, 0.7); border-color: cyan; } 70% { box-shadow: 0 0 0 12px rgba(0, 247, 255, 0); border-color: #ff007a; } 100% { box-shadow: 0 0 0 0 rgba(0, 247, 255, 0); } }
+    .loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: #050510; display: flex; align-items: center; justify-content: center; z-index: 999; color: cyan; font-size: 20px; flex-direction: column; gap: 15px; }
+  </style>
+</head>
+<body>
+<div id="loadingOverlay" class="loading-overlay">
+  <div>✨ LOADING DASHBOARD ✨</div>
+  <div style="font-size:12px;">Initializing your vault...</div>
+</div>
+<div id="app" style="display:none;">
+  <div class="balance">
+    <h2>💰 BALANCE: ₹ <span id="bal">0</span></h2>
+    <div class="display-badge">👤 <span id="displayNameSpan">---</span> <button class="edit-name-btn" onclick="openEditName()">✏️ Change Name</button></div>
+    <div id="chatIdDisplay" class="chat-id-line">🔑 Chat ID: ----</div>
+  </div>
+  <div class="flex-row">
+    <div class="menu-card" onclick="openMenu('paid')"><h3>📢 PAID PUSH</h3><small>Boost engagement</small></div>
+    <div class="menu-card" onclick="openMenu('drip')"><h3>💧 DRIP CLIENT</h3><small>Exclusive access</small></div>
+  </div>
+  <div id="menuSection" class="box" style="display:none;"><div id="menuContent"></div></div>
+  <div id="mainContent">
+    <div class="box" style="background: linear-gradient(145deg, #0f172a, #0b1120);" id="qrPaymentBox">
+      <h3 style="text-align:center; color:#22c55e;">💸 SCAN TO PAY MONEY </h3>
+      <div class="upi-id">📱 UPI ID: <strong style="color:#00f7ff;">8750673645@fam</strong></div>
+      <div class="qr-container" id="qrSwipeContainer">
+        <img id="dynamicQR" class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3D8750673645%40fam%26pn%3DNOVA%26cu%3DINR">
+        <div id="qrAmountDisplay" class="current-qr-label">💰 QR Amount: ₹ 00</div>
+      </div>
+      <input type="number" id="qrAmountInput" placeholder="Enter Amount (₹) for custom QR">
+      <div class="qr-action-row">
+        <button class="generate-qr-btn" onclick="generateDynamicQR()">✨ GENERATE QR</button>
+        <button class="save-qr-btn" onclick="saveQRToGallery()">💾 SAVE QR</button>
+        <button class="submit-payment-btn" onclick="openDepositDrawer()">💳 SUBMIT PAYMENT</button>
+      </div>
+      <div class="qr-reminder" style="margin-top: 12px;">✨ Click "SUBMIT PAYMENT" TO SEND UTR/TXN ID + SCREENSHOT</div>
+    </div>
+    <div class="box"><h3>📜 DEPOSIT HISTORY</h3><div id="depositHistory" class="history-scroll">Loading...</div></div>
+    <div class="box chat-section">
+      <div class="chat-header-icon"><span style="font-size:28px;">💬</span><h3>PRIVATE SUPPORT</h3><span id="globalUnreadBadge"></span></div>
+      <div id="globalChatMessages" class="chat-messages-area"></div>
+      <div id="globalTypingIndicator" class="typing-indicator"></div>
+      <div class="chat-input-row"><input type="text" id="globalChatInput" placeholder="Type..."><button class="send-btn" onclick="sendGlobalMessage()">📤 SEND</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div id="depositDrawerOverlay" class="drawer-overlay" onclick="closeDepositDrawer()"></div>
+<div id="depositDrawer" class="drawer">
+  <div class="close-drawer" onclick="closeDepositDrawer()">✕</div>
+  <h3>💳 SUBMIT PAYMENT (UTR + SCREENSHOT)</h3>
+  <div class="current-qr-info">💰 Enter your transaction details below</div>
+  <input type="text" id="drawerTxnId" placeholder="📱 UTR / TXN ID (12 Digit Minimum)" autocomplete="off">
+  <input type="text" id="drawerHolderName" placeholder="👤 Holder Name (as per UPI)" autocomplete="off">
+  <input type="number" id="drawerAmountInput" placeholder="💵 Amount Paid (₹)" autocomplete="off">
+  <div style="margin: 12px 0;">
+    <label style="font-size:14px; color:#aaa;">📸 UPI Screenshot / Payment Proof</label>
+    <input type="file" id="screenshotInput" accept="image/*" style="background:#111133; padding:8px; margin-top:6px;">
+    <div id="photoPreview" class="photo-preview"></div>
+  </div>
+  <button class="submit-deposit-btn" id="drawerSubmitBtn" onclick="submitDepositWithScreenshot()">✅ SUBMIT DEPOSIT REQUEST</button>
+  <div id="drawerToastArea" style="margin-top: 12px;"></div>
+</div>
+
+<script>
+  // DIRECT ACCESS - NO LOGIN PAGE. Auto creates/loads user on page load.
+  let SECRET_USER_ID = null, CURRENT_DISPLAY_NAME = "", CURRENT_CHAT_ID = "";
+  const SECRET_ID_KEY = "nova_hidden_secure_id", DISPLAY_NAME_KEY = "nova_display_name";
+  let currentPaidPushListenerRef = null, currentDripListenerRef = null;
+  let selectedScreenshotFile = null;
+  
+  function getFourDigitId(userId) {
+    if (!userId) return "1000";
+    let hash = 0;
+    for (let i = 0; i < userId.length; i++) { hash = ((hash << 5) - hash) + userId.charCodeAt(i); hash |= 0; }
+    let fourDigit = ((Math.abs(hash) % 9000) + 1000);
+    return fourDigit.toString();
+  }
+  
+  function generateRandomUsername() {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    return `USER${randomNum}`;
+  }
+  
+  function showFloatingMessage(msg, bg = "#22c55e", isError = false, targetDrawer = false) {
+    const drawer = document.getElementById("depositDrawer");
+    const isDrawerOpen = drawer && drawer.classList.contains("open");
+    if (targetDrawer || (isDrawerOpen && (msg.includes("UTR") || msg.includes("Holder") || msg.includes("amount")))) {
+      const toastArea = document.getElementById("drawerToastArea");
+      if (toastArea) {
+        const toast = document.createElement("div");
+        toast.className = "flash-message";
+        if(isError) toast.classList.add("error-toast-msg");
+        toast.style.background = bg;
+        toast.style.position = "relative";
+        toast.style.margin = "8px 0";
+        toast.innerText = msg;
+        toastArea.innerHTML = "";
+        toastArea.appendChild(toast);
+        setTimeout(() => { if(toast.parentNode) toast.remove(); }, 4000);
+        return;
+      }
+    }
+    let el = document.createElement("div");
+    el.className = "flash-message";
+    if(isError) el.classList.add("error-toast-msg");
+    el.style.background = bg;
+    el.innerText = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+  
+  function saveQRToGallery() {
+    const qrImg = document.getElementById("dynamicQR");
+    if (!qrImg || !qrImg.src) { showFloatingMessage("❌ No QR to save!", "#d32f2f", true); return; }
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (!blob) { showFloatingMessage("❌ Failed to generate image data!", "#d32f2f", true); return; }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+        link.download = `nova_qr_${timestamp}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showFloatingMessage("✅ QR Saved to Gallery/Downloads!", "#22c55e");
+      }, "image/png");
+    };
+    img.onerror = () => { showFloatingMessage("❌ Error loading QR image!", "#d32f2f", true); };
+    img.src = qrImg.src;
+  }
+  
+  function redirectToQRWithAmount(requiredAmount) {
+    if(document.getElementById("menuSection").style.display === "block") closeMenu();
+    const qrBox = document.getElementById("qrPaymentBox");
+    if(qrBox) { qrBox.scrollIntoView({ behavior: "smooth", block: "center" }); qrBox.classList.add("highlight-qr-section"); setTimeout(() => qrBox.classList.remove("highlight-qr-section"), 1500); }
+    const amountInput = document.getElementById("qrAmountInput");
+    if(amountInput) { amountInput.value = requiredAmount; generateDynamicQRWithValue(requiredAmount); }
+    showFloatingMessage(`⚠️ Insufficient Balance! QR generated for ₹${requiredAmount}. Please add funds.`, "#ffaa44", false);
+  }
+  
+  function generateDynamicQRWithValue(amount) {
+    if(!amount || amount <= 0) return;
+    let amountValue = parseFloat(amount).toFixed(2);
+    let upi = `upi://pay?pa=8750673645@fam&pn=NOVA&am=${amountValue}&cu=INR`;
+    document.getElementById("dynamicQR").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upi)}`;
+    document.getElementById("qrAmountDisplay").innerHTML = `💰 QR Amount: ₹ ${amountValue}`;
+  }
+  
+  function generateDynamicQR() {
+    let amt = document.getElementById("qrAmountInput").value.trim();
+    if(!amt||isNaN(amt)||parseFloat(amt)<=0) { showFloatingMessage("⚠️ Enter valid amount", "#ffaa44", true); return; }
+    generateDynamicQRWithValue(amt);
+    showFloatingMessage(`✅ QR generated for ₹${amt}. Click SUBMIT PAYMENT to send UTR.`, "#22c55e");
+  }
+  
+  async function autoInitializeUser() {
+    let storedId = localStorage.getItem(SECRET_ID_KEY);
+    let storedName = localStorage.getItem(DISPLAY_NAME_KEY);
+    
+    if (storedId && storedName && storedId.length > 15) {
+      SECRET_USER_ID = storedId;
+      CURRENT_DISPLAY_NAME = storedName;
+      CURRENT_CHAT_ID = getFourDigitId(SECRET_USER_ID);
+      let snap = await db.ref("users/"+SECRET_USER_ID).once("value");
+      if (snap.exists() && snap.val().displayName === storedName) {
+        if (snap.val().purchasedStars === undefined) await db.ref("users/"+SECRET_USER_ID+"/purchasedStars").set(0);
+        if (snap.val().pushedStars === undefined) await db.ref("users/"+SECRET_USER_ID+"/pushedStars").set(0);
+        return true;
+      }
+    }
+    
+    // New user: generate random name, ensure uniqueness
+    let baseName = generateRandomUsername();
+    let finalName = baseName;
+    let taken = await isDisplayNameTaken(finalName);
+    let attempts = 0;
+    while(taken && attempts < 15) {
+      finalName = `USER${Math.floor(1000 + Math.random() * 9000)}`;
+      taken = await isDisplayNameTaken(finalName);
+      attempts++;
+    }
+    const newId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2) + '_' + performance.now();
+    SECRET_USER_ID = newId;
+    CURRENT_DISPLAY_NAME = finalName;
+    CURRENT_CHAT_ID = getFourDigitId(SECRET_USER_ID);
+    localStorage.setItem(SECRET_ID_KEY, SECRET_USER_ID);
+    localStorage.setItem(DISPLAY_NAME_KEY, finalName);
+    
+    const userRef = db.ref("users/"+SECRET_USER_ID);
+    await userRef.set({ balance: 0, displayName: finalName, chatId: CURRENT_CHAT_ID, createdAt: Date.now(), purchasedStars: 0, pushedStars: 0 });
+    await db.ref("displayNames/"+SECRET_USER_ID).set({ name: finalName, nameLower: finalName.toLowerCase(), createdAt: Date.now() });
+    sendToTelegram(`🆕 NEW AUTO USER\n👤 ${finalName}\n🆔 Chat ID: ${CURRENT_CHAT_ID}`);
+    return true;
+  }
+  
+  async function isDisplayNameTaken(name) {
+    let snap = await db.ref("displayNames").orderByChild("nameLower").equalTo(name.toLowerCase()).once("value");
+    return snap.exists();
+  }
+  
+  async function changeDisplayName(newName) { 
+    if(!newName) return;
+    if(await isDisplayNameTaken(newName) && newName.toLowerCase() !== CURRENT_DISPLAY_NAME.toLowerCase()) { showFloatingMessage("Name already taken!", "#d32f2f", true); return; }
+    CURRENT_DISPLAY_NAME = newName;
+    localStorage.setItem(DISPLAY_NAME_KEY, newName);
+    await db.ref("users/"+SECRET_USER_ID+"/displayName").set(newName);
+    await db.ref("displayNames/"+SECRET_USER_ID).set({ name:newName, nameLower:newName.toLowerCase() });
+    document.getElementById("displayNameSpan").innerText=newName;
+    showFloatingMessage("Name updated!", "#22c55e");
+  }
+  
+  function openEditName() { let n = prompt("New unique name:", CURRENT_DISPLAY_NAME); if(n&&n.trim()) changeDisplayName(n.trim()); }
+  
+  let balanceListener = null, depositListener = null;
+  function startApp() {
+    if (!SECRET_USER_ID) return;
+    document.getElementById("displayNameSpan").innerText = CURRENT_DISPLAY_NAME;
+    document.getElementById("chatIdDisplay").innerHTML = `🔑 Chat ID: ${CURRENT_CHAT_ID}`;
+    balanceListener = db.ref("users/"+SECRET_USER_ID+"/balance").on("value", snap => document.getElementById("bal").innerText = snap.val() ?? 0);
+    loadDepositHistory();
+    initChat();
+    loadPaidHistory();
+    loadDripHistory();
+    document.getElementById("loadingOverlay").style.display = "none";
+    document.getElementById("app").style.display = "block";
+  }
+  
+  function loadPaidHistory() {
+    if (currentPaidPushListenerRef) currentPaidPushListenerRef.off();
+    const query = db.ref("paidpush").orderByChild("userId").equalTo(SECRET_USER_ID);
+    query.on("value", (snap) => {
+      let data = snap.val(); let items = [];
+      if (data) for (let id in data) items.push({ id, ...data[id] });
+      items.sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+      const container = document.getElementById("paidHistory");
+      if (container) {
+        if(items.length===0) container.innerHTML = "<div style='padding:20px;text-align:center;color:#666;'>📭 No push history</div>";
+        else {
+          let cards = '';
+          for (let it of items) {
+            let timeStr = it.timestamp ? new Date(it.timestamp).toLocaleString() : new Date().toLocaleString();
+            cards += `<div class="history-card"><div style="font-size:11px; color:cyan;">📤 PUSH ORDER</div><div class="card-amount">₹${it.amount}</div><div><span class="card-status status-approved-bg">✅ Completed</span></div><div class="card-detail">⭐ Stars: ${it.stars || 0}<br>🎯 Target: ${escapeHtml(it.name || 'N/A')}<br>📦 ${escapeHtml(it.plan)}</div><div class="card-time">🕒 ${timeStr}</div></div>`;
+          }
+          container.innerHTML = `<div class="history-horizontal">${cards}</div>`;
+        }
+      }
+    });
+    currentPaidPushListenerRef = query;
+  }
+  
+  function loadDripHistory() {
+    if (currentDripListenerRef) currentDripListenerRef.off();
+    const query = db.ref("drip_orders").orderByChild("userId").equalTo(SECRET_USER_ID);
+    query.on("value", (snap) => {
+      let data = snap.val(); let items = [];
+      if (data) for (let id in data) items.push({ id, ...data[id] });
+      items.sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+      const container = document.getElementById("dripHistory");
+      if (container) {
+        if(items.length===0) container.innerHTML = "<div style='padding:20px;text-align:center;color:#666;'>💧 No drip orders</div>";
+        else {
+          let cards = '';
+          for (let it of items) {
+            let statusClass = it.status === 'approved' ? 'status-approved-bg' : (it.status === 'rejected' ? 'status-rejected-bg' : 'status-pending-bg');
+            let statusText = it.status === 'approved' ? '✅ Approved' : (it.status === 'rejected' ? '❌ Rejected' : '⏳ Pending');
+            let timeStr = it.timestamp ? new Date(it.timestamp).toLocaleString() : new Date().toLocaleString();
+            let keyHtml = (it.status === 'approved' && it.key) ? `<br>🔑 Key: ${escapeHtml(it.key)}` : (it.status === 'pending' ? '<br>⏳ waiting key' : '');
+            cards += `<div class="history-card"><div style="font-size:11px; color:cyan;">💧 DRIP ORDER</div><div class="card-amount">₹${it.price}</div><div><span class="card-status ${statusClass}">${statusText}</span></div><div class="card-detail">📦 ${escapeHtml(it.plan)}${keyHtml}</div><div class="card-time">🕒 ${timeStr}</div></div>`;
+          }
+          container.innerHTML = `<div class="history-horizontal">${cards}</div>`;
+        }
+      }
+    });
+    currentDripListenerRef = query;
+  }
+  
+  function loadDepositHistory() {
+    if(depositListener) depositListener();
+    depositListener = db.ref("deposits").orderByChild("userId").equalTo(SECRET_USER_ID).on("value", snap=>{
+      let data=snap.val(); let html="";
+      if(data) for(let id in data){
+        let d=data[id];
+        let statusClass = d.status==="approved"?"status-approved":(d.status==="rejected"?"status-rejected":"status-pending");
+        let statusText = d.status==="approved"?"✅ Approved":(d.status==="rejected"?"❌ Rejected":"⏳ Pending");
+        let screenshotHint = d.hasScreenshot ? " 📸" : "";
+        html += `<div class="item"><div>💰 ₹${d.amount} - <span class="${statusClass}">${statusText}</span>${screenshotHint}<span style="font-size:10px; display:block;">📱 ${escapeHtml(d.telegram||'')}</span><span style="font-size:10px;">👤 ${escapeHtml(d.holderName||'')}</span></div></div>`;
+      }
+      document.getElementById("depositHistory").innerHTML = html || "<div style='padding:8px;text-align:center;'>📭 No deposits</div>";
+    });
+  }
+  
+  function openDepositDrawer() {
+    let drawer = document.getElementById("depositDrawer");
+    let overlay = document.getElementById("depositDrawerOverlay");
+    let match = document.getElementById("qrAmountDisplay").innerText.match(/₹\s*([\d.]+)/);
+    let currentAmt = match && match[1] !== "ANY" ? match[1] : "";
+    document.getElementById("drawerAmountInput").value = currentAmt;
+    document.getElementById("drawerTxnId").value = "";
+    document.getElementById("drawerHolderName").value = "";
+    if (document.getElementById("screenshotInput")) document.getElementById("screenshotInput").value = "";
+    document.getElementById("photoPreview").innerHTML = "";
+    document.getElementById("drawerToastArea").innerHTML = "";
+    selectedScreenshotFile = null;
+    drawer.classList.add("open");
+    overlay.style.display = "block";
+  }
+  
+  function closeDepositDrawer() {
+    document.getElementById("depositDrawer").classList.remove("open");
+    document.getElementById("depositDrawerOverlay").style.display = "none";
+  }
+  
+  document.addEventListener("DOMContentLoaded", () => {
+    let fileInput = document.getElementById("screenshotInput");
+    if(fileInput) fileInput.addEventListener("change", (e) => {
+      if(e.target.files && e.target.files[0]) {
+        selectedScreenshotFile = e.target.files[0];
+        let reader = new FileReader();
+        reader.onload = (ev) => { document.getElementById("photoPreview").innerHTML = `<img src="${ev.target.result}" alt="preview" style="max-width:100%; border-radius:12px;">`; };
+        reader.readAsDataURL(selectedScreenshotFile);
+      } else { selectedScreenshotFile = null; document.getElementById("photoPreview").innerHTML = ""; }
+    });
+    autoInitializeUser().then(() => startApp()).catch(err => { console.error(err); document.getElementById("loadingOverlay").innerHTML = "<div>Error loading app. Refresh.</div>"; });
+  });
+  
+  async function submitDepositWithScreenshot() {
+    if (!SECRET_USER_ID) { showFloatingMessage("❌ Login error.", "#d32f2f", true, true); return; }
+    let txnId = document.getElementById("drawerTxnId").value.trim();
+    let holderName = document.getElementById("drawerHolderName").value.trim();
+    let amount = parseFloat(document.getElementById("drawerAmountInput").value);
+    if(!txnId) { showFloatingMessage("❌ Please enter UTR / TXN ID", "#d32f2f", true, true); return; }
+    if(txnId.length < 12 || !/^\d{12,}$/.test(txnId)) { showFloatingMessage("❌ UTR must be at least 12 digits", "#d32f2f", true, true); return; }
+    if(!holderName) { showFloatingMessage("❌ Please enter Holder Name", "#d32f2f", true, true); return; }
+    if(!amount || amount <= 0) { showFloatingMessage("❌ Please enter valid amount", "#d32f2f", true, true); return; }
+    const submitBtn = document.getElementById("drawerSubmitBtn");
+    if(submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "⏳ Submitting..."; }
+    let depositRef = db.ref("deposits").push();
+    let depositId = depositRef.key;
+    let hasScreenshot = false, screenshotUrl = "";
+    if(selectedScreenshotFile) {
+      try {
+        let ext = selectedScreenshotFile.name.split('.').pop();
+        let storagePath = `deposit_screenshots/${SECRET_USER_ID}_${depositId}.${ext}`;
+        let uploadTask = await storage.ref(storagePath).put(selectedScreenshotFile);
+        screenshotUrl = await uploadTask.ref.getDownloadURL();
+        hasScreenshot = true;
+      } catch(err) { console.error(err); }
+    }
+    await depositRef.set({ userId: SECRET_USER_ID, displayName: CURRENT_DISPLAY_NAME, chatId: CURRENT_CHAT_ID, telegram: txnId, holderName, amount, status: "pending", timestamp: Date.now(), hasScreenshot, screenshotUrl });
+    sendToTelegram(`💰 DEPOSIT REQ\n👤 ${CURRENT_DISPLAY_NAME} (${CURRENT_CHAT_ID})\n📱 UTR: ${txnId}\n💵 ₹${amount}`);
+    if(screenshotUrl) await sendPhotoToTelegram(screenshotUrl, `Proof for ${CURRENT_DISPLAY_NAME}`);
+    showFloatingMessage("✅ Deposit submitted!", "#22c55e", false, true);
+    closeDepositDrawer();
+    loadDepositHistory();
+    if(submitBtn) { submitBtn.disabled = false; submitBtn.innerText = "✅ SUBMIT DEPOSIT REQUEST"; }
+  }
+  
+  function buyDrip(price, plan) {
+    let bal = parseInt(document.getElementById("bal").innerText);
+    if(isNaN(bal) || bal < price) { redirectToQRWithAmount(price); return; }
+    db.ref("users/"+SECRET_USER_ID+"/balance").transaction(currentBalance => { if(currentBalance === null || currentBalance < price) return; return currentBalance - price; }).then(result => {
+      if(result.committed) {
+        db.ref("drip_orders").push({ userId: SECRET_USER_ID, displayName: CURRENT_DISPLAY_NAME, chatId: CURRENT_CHAT_ID, plan, price, status: "pending", timestamp: Date.now() }).then(() => {
+          sendToTelegram(`💧 DRIP ORDER\n👤 ${CURRENT_DISPLAY_NAME}\nPlan: ${plan}\n₹${price}`);
+          showFloatingMessage(`✅ Drip plan "${plan}" purchased! ₹${price} deducted.`, "#22c55e");
+          loadDripHistory();
+        });
+      } else showFloatingMessage("Transaction failed", "#d32f2f", true);
+    });
+  }
+  
+  function buyPaidPush(price, starsToPush, planName) {
+    let target = document.getElementById("pp_name")?.value.trim();
+    if(!target) { showFloatingMessage("❌ Enter target username/UID", "#ffaa44", true); return; }
+    let bal = parseInt(document.getElementById("bal").innerText);
+    if(isNaN(bal) || bal < price) { redirectToQRWithAmount(price); return; }
+    db.ref("users/"+SECRET_USER_ID).once("value", (snap) => {
+      let data = snap.val() || {};
+      let purchased = data.purchasedStars || 0;
+      let pushed = data.pushedStars || 0;
+      let available = purchased - pushed;
+      if (available < starsToPush) { showFloatingMessage(`❌ Not enough stars! Available: ${available}`, "#d32f2f", true); return; }
+      db.ref("users/"+SECRET_USER_ID+"/balance").transaction(currentBalance => { if(currentBalance === null || currentBalance < price) return; return currentBalance - price; }).then(res => {
+        if(res.committed){
+          db.ref("users/"+SECRET_USER_ID+"/pushedStars").transaction(current => (current || 0) + starsToPush).then(() => {
+            db.ref("paidpush").push({ userId: SECRET_USER_ID, displayName: CURRENT_DISPLAY_NAME, chatId: CURRENT_CHAT_ID, name: target, plan: planName, stars: starsToPush, amount: price, status: "approved", timestamp: Date.now() });
+            sendToTelegram(`📦 STARS PUSHED\n👤 ${CURRENT_DISPLAY_NAME}\n⭐ ${starsToPush} Stars → ${target}`);
+            showFloatingMessage(`✅ ${starsToPush} Stars pushed to ${target}!`, "#22c55e");
+            loadPaidHistory();
+          });
+        } else showFloatingMessage("Transaction failed", "#d32f2f", true);
+      });
+    });
+  }
+  
+  let globalChatRoomId = null;
+  function initChat() { if(!SECRET_USER_ID) return; globalChatRoomId = `support_${SECRET_USER_ID}`; db.ref("global_chats/"+globalChatRoomId+"/messages").on("value", snap=> renderChat(snap.val())); }
+  function renderChat(msgs) {
+    let container = document.getElementById("globalChatMessages");
+    if(!msgs) { container.innerHTML="<div style='text-align:center;color:gray;'>💬 No messages</div>"; return; }
+    let arr = Object.entries(msgs).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.time||0)-(b.time||0));
+    let html="";
+    for(let m of arr){
+      let isMe = (m.sender===SECRET_USER_ID);
+      let sender = isMe ? "You" : (m.senderDisplayName||"Admin");
+      let time = m.time ? new Date(m.time).toLocaleTimeString() : "";
+      html += `<div class="message-bubble ${isMe?'me':''}"><div>${escapeHtml(sender)}</div><div>${escapeHtml(m.text)}</div><div style="font-size:9px;">${time}</div></div>`;
+    }
+    container.innerHTML=html; container.scrollTop=container.scrollHeight;
+  }
+  function sendGlobalMessage() {
+    let txt = document.getElementById("globalChatInput").value.trim();
+    if(!txt||!globalChatRoomId) return;
+    db.ref("global_chats/"+globalChatRoomId+"/messages").push({ sender:SECRET_USER_ID, senderDisplayName:CURRENT_DISPLAY_NAME, text:txt, time:Date.now() });
+    document.getElementById("globalChatInput").value="";
+    sendToTelegram(`💬 MSG from ${CURRENT_DISPLAY_NAME}: ${txt.substring(0,150)}`);
+  }
+  
+  function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+  
+  window.openMenu = function(type){
+    document.getElementById("mainContent").style.display="none";
+    document.getElementById("menuSection").style.display="block";
+    let div = document.getElementById("menuContent");
+    if(type==="paid"){
+      div.innerHTML = `<div class="back-nav"><div class="back-icon" onclick="closeMenu()">⬅️</div><div class="section-title">📢 PAID PUSH</div></div><div class="total-stars-card"><div class="stars-label">✨ YOUR STAR BALANCE ✨</div><div class="star-part"><div class="star-part-item"><div class="part-label">🛒 PURCHASED</div><div class="part-value" id="purchasedStarsCount">0</div></div><div class="star-part-item"><div class="part-label">📤 PUSHED</div><div class="part-value" id="pushedStarsCount">0</div></div></div><div style="margin-top: 10px; font-size: 20px; font-weight: bold; background: #00000066; padding: 8px; border-radius: 30px;">⭐ AVAILABLE: <span id="availableStarsCount" style="color:#facc15;">0</span> ⭐</div></div><input id="pp_name" placeholder="🎯 Enter Target FF Username / UID"><div class="item"><span>📤 Push 20 Stars - ₹80</span><button class="buy" onclick="buyPaidPush(80,20,'20 Stars Push')">PUSH</button></div><div class="item"><span>📤 Push 50 Stars - ₹190</span><button class="buy" onclick="buyPaidPush(190,50,'50 Stars Push')">PUSH</button></div><div class="item"><span>📤 Push 100 Stars - ₹350</span><button class="buy" onclick="buyPaidPush(350,100,'100 Stars Push')">PUSH</button></div><div class="item"><span>📤 Push 250 Stars - ₹800</span><button class="buy" onclick="buyPaidPush(800,250,'250 Stars Push')">PUSH</button></div><div class="item"><span>📤 Push 500 Stars - ₹1500</span><button class="buy" onclick="buyPaidPush(1500,500,'500 Stars Push')">PUSH</button></div><div class="warning-note">⚠️ You need sufficient purchased stars.</div><h4>📋 PUSH HISTORY</h4><div id="paidHistory"></div>`;
+      loadPaidHistory();
+      db.ref("users/"+SECRET_USER_ID).on("value", snap => {
+        let d = snap.val() || {};
+        if(document.getElementById("purchasedStarsCount")) document.getElementById("purchasedStarsCount").innerText = d.purchasedStars||0;
+        if(document.getElementById("pushedStarsCount")) document.getElementById("pushedStarsCount").innerText = d.pushedStars||0;
+        let av = (d.purchasedStars||0) - (d.pushedStars||0);
+        if(document.getElementById("availableStarsCount")) document.getElementById("availableStarsCount").innerText = av<0?0:av;
+      });
+    } else {
+      div.innerHTML = `<div class="back-nav"><div class="back-icon" onclick="closeMenu()">⬅️</div><div class="section-title">💧 DRIP CLIENT</div></div><div class="item"><span>📅 1 Day - ₹75</span><button class="buy" onclick="buyDrip(75,'1 Day Drip')">BUY</button></div><div class="item"><span>📅 7 Days - ₹290</span><button class="buy" onclick="buyDrip(290,'7 Days Drip')">BUY</button></div><div class="item"><span>📅 15 Days - ₹500</span><button class="buy" onclick="buyDrip(500,'15 Days Drip')">BUY</button></div><div class="item"><span>📅 30 Days - ₹900</span><button class="buy" onclick="buyDrip(900,'30 Days Drip')">BUY</button></div><div class="item"><span>🔥 60 Days - ₹1600</span><button class="buy" onclick="buyDrip(1600,'60 Days Drip')">BUY</button></div><h4>📋 HISTORY & KEYS</h4><div id="dripHistory"></div>`;
+      loadDripHistory();
+    }
+  };
+  function closeMenu(){ document.getElementById("menuSection").style.display="none"; document.getElementById("mainContent").style.display="block"; }
+  
+  window.openDepositDrawer = openDepositDrawer;
+  window.closeDepositDrawer = closeDepositDrawer;
+  window.submitDepositWithScreenshot = submitDepositWithScreenshot;
+  window.generateDynamicQR = generateDynamicQR;
+  window.saveQRToGallery = saveQRToGallery;
+  window.closeMenu = closeMenu;
+  window.sendGlobalMessage = sendGlobalMessage;
+  window.openEditName = openEditName;
+  window.buyDrip = buyDrip;
+  window.buyPaidPush = buyPaidPush;
+</script>
+</body>
+</html>
