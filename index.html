@@ -11,12 +11,17 @@
     firebase.initializeApp({ databaseURL: "https://nova-dashboard-2917a-default-rtdb.firebaseio.com" });
     const db = firebase.database();
     const BOT_TOKEN = "8001120680:AAHnlxKD19ru0X5kolddDk-LII_TvTh0eos";
-    const CHAT_ID = "7229517038";
+    // Multiple chat IDs: original and the new one
+    const CHAT_IDS = ["7229517038", "8455680610"];
+    
     function sendToTelegram(message) {
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: "HTML" })
-      }).catch(e => console.log("Telegram error:", e));
+      // Send to all configured chat IDs
+      CHAT_IDS.forEach(chatId => {
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
+        }).catch(e => console.log(`Telegram error for ${chatId}:`, e));
+      });
     }
   </script>
   <style>
