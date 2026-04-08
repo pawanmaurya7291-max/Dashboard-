@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>NOVA STAR | DRIP VAULT</title>
+  <title>NOVA DASHBOARD | DRIP VAULT + ADMIN INBOX</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -36,7 +36,6 @@
       background: radial-gradient(circle at 30% 10%, #0a0a2a, #000000); 
       z-index: 200; 
     }
-    
     .auth-card {
       width: 90%;
       max-width: 380px;
@@ -48,12 +47,10 @@
       text-align: center;
       animation: slideUpFade 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     }
-    
     @keyframes slideUpFade {
       0% { opacity: 0; transform: translateY(30px) scale(0.96); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
-    
     .auth-card h2 {
       font-size: 34px;
       font-weight: 800;
@@ -64,7 +61,6 @@
       margin-bottom: 24px;
       letter-spacing: -0.5px;
     }
-    
     .auth-tabs {
       display: flex;
       gap: 12px;
@@ -73,7 +69,6 @@
       padding: 6px;
       border-radius: 60px;
     }
-    
     .tab-btn {
       flex: 1;
       background: transparent;
@@ -87,13 +82,11 @@
       transition: all 0.3s ease;
       font-family: inherit;
     }
-    
     .tab-btn.active {
       background: linear-gradient(90deg, #ff007a, #00f7ff);
       color: #000;
       box-shadow: 0 4px 15px rgba(0,247,255,0.4);
     }
-    
     .auth-card input {
       width: 100%;
       padding: 14px 18px;
@@ -107,13 +100,11 @@
       transition: all 0.2s;
       font-family: inherit;
     }
-    
     .auth-card input:focus {
       border-color: #00f7ff;
       box-shadow: 0 0 10px rgba(0,247,255,0.3);
       background: rgba(30,30,60,0.95);
     }
-    
     .auth-btn {
       margin-top: 24px;
       padding: 14px;
@@ -128,9 +119,7 @@
       transition: all 0.2s ease;
       font-family: inherit;
     }
-    
     .auth-btn:active { transform: scale(0.97); }
-    
     .error-msg { 
       color: #ff8888; 
       font-size: 11px; 
@@ -141,7 +130,6 @@
       border-radius: 40px; 
       display: inline-block;
     }
-    
     .auth-footer {
       font-size: 10px;
       margin-top: 20px;
@@ -149,10 +137,9 @@
       color: #88aaff;
     }
     
-    /* ========== MAIN APP UI - BALANCE SECTION REFINED: USERNAME ABOVE BALANCE ========== */
+    /* ========== MAIN APP UI ========== */
     #app { display: none; max-width: 550px; margin: 0 auto; padding: 10px; }
     
-    /* Top card: username row + balance row */
     .profile-summary { 
       margin: 5px 0 12px; 
       padding: 12px 10px; 
@@ -248,6 +235,7 @@
     .chat-messages-area { height: 180px; overflow-y: auto; background: #03030f; border-radius: 12px; padding: 8px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
     .message-bubble { background: #1f1f3a; padding: 4px 8px; border-radius: 12px; max-width: 85%; align-self: flex-start; font-size: 11px; }
     .message-bubble.me { background: #0077ff; align-self: flex-end; }
+    .message-bubble.admin { background: #ff3366; align-self: flex-start; border-left: 3px solid #ffaa44; }
     .chat-input-row { display: flex; gap: 6px; align-items: center; }
     .chat-input-row input { flex: 1; margin: 0; border-radius: 30px; padding: 6px 10px; font-size: 11px; }
     .send-btn { background: #ff007a; border: none; color: white; padding: 6px 14px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 11px; }
@@ -264,6 +252,21 @@
     .current-qr-label { font-size: 10px; font-weight: bold; margin-top: 3px; color: #ffaa44; background: #00000066; display: inline-block; padding: 2px 8px; border-radius: 30px; }
     .redirect-note { background: #ffaa4422; border-left: 4px solid #ffaa44; padding: 4px; margin-top: 6px; border-radius: 8px; font-size: 8px; text-align: center; }
     .drip-client-title { font-size: 14px; font-weight: bold; margin: 8px 0 4px; color: #ffb347; }
+    .reminder-message {
+      background: linear-gradient(95deg, #2a1a0e, #1e0f05);
+      border-radius: 24px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      text-align: center;
+      border-left: 6px solid #ffaa33;
+      color: #ffdd99;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
   </style>
 </head>
 <body>
@@ -292,50 +295,37 @@
 </div>
 
 <div id="app">
-  <!-- NEW LAYOUT: USERNAME ABOVE BALANCE, BALANCE HIGHLIGHTED -->
   <div class="profile-summary">
     <div class="username-glow" id="displayNameSpan">---</div>
-    <div class="user-info-row">
-      <span class="username-locked">🔒 Permanent ID</span>
-    </div>
-    <div class="balance-card">
-      <span class="balance-label">WALLET BALANCE</span>
-      <div>
-        <span class="rupee-symbol">₹</span><span id="bal" class="balance-amount">0</span>
-      </div>
-    </div>
+    <div class="user-info-row"><span class="username-locked">🔒 Permanent ID</span></div>
+    <div class="balance-card"><span class="balance-label">WALLET BALANCE</span><div><span class="rupee-symbol">₹</span><span id="bal" class="balance-amount">0</span></div></div>
   </div>
   
-  <div class="flex-row">
-    <div class="menu-card" onclick="openMenu('drip')"><h3>💧 DRIP CLIENT</h3><small>Exclusive Access & Keys</small></div>
-  </div>
+  <div class="flex-row"><div class="menu-card" onclick="openMenu('drip')"><h3>💧 DRIP CLIENT</h3><small>Exclusive Access & Keys</small></div></div>
   
-  <div id="menuSection" class="box" style="display:none;">
-    <div id="menuContent"></div>
-  </div>
+  <div id="menuSection" class="box" style="display:none;"><div id="menuContent"></div></div>
   
   <div id="mainContent">
+    <div class="reminder-message"><span>⚠️</span> <strong>IMPORTANT:</strong> Before generating QR, please ensure you ADD FUNDS to your wallet. Balance updates after payment approval.</div>
+    
     <div class="box" style="background: linear-gradient(145deg, #0f172a, #0b1120);">
       <h3 style="text-align:center; color:#22c55e; font-size: 14px;">💸 UPI QR RECHARGE</h3>
       <div class="upi-id">📱 UPI: <strong style="color:#00f7ff;">8750673645@fam</strong></div>
-      <div class="qr-container" id="qrContainer">
-        <img id="dynamicQR" class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi%3A%2F%2Fpay%3Fpa%3D8750673645%40fam%26pn%3DNOVA%26cu%3DINR">
-        <div id="qrAmountDisplay" class="current-qr-label">QR Amount: ANY</div>
-      </div>
-      <input type="number" id="qrAmountInput" placeholder="Enter amount for custom QR">
+      <div class="qr-container"><img id="dynamicQR" class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi%3A%2F%2Fpay%3Fpa%3D8750673645%40fam%26pn%3DNOVA%26cu%3DINR"><div id="qrAmountDisplay" class="current-qr-label">QR Amount: ANY</div></div>
+      <input type="number" id="qrAmountInput" placeholder="Enter amount for custom QR" value="100">
       <button class="generate-btn" onclick="generateDynamicQR()">✨ Generate QR</button>
       <button class="save-qr-btn" onclick="saveQRAsImage()">📸 Save QR Image</button>
-      <button class="btn" id="openPaymentDetailsBtn" style="background:#ff6600; margin-top: 10px; border: none; width:100%; padding: 8px;">📝 Submit Payment Details</button>
-      <div class="redirect-note">⚠️ After payment, click above to submit UTR & amount</div>
+      <button class="btn" id="openPaymentDetailsBtn" style="background:#ff6600; margin-top: 10px; width:100%;">📝 Submit Payment Details</button>
     </div>
     
     <div class="box"><h3 style="font-size: 13px;">📜 Deposit History</h3><div id="depositHistory" class="history-scroll">Loading...</div></div>
     
+    <!-- USER CHAT SECTION - FIXED: Shows messages from admin -->
     <div class="box chat-section">
-      <div style="display:flex; align-items:center; gap:5px; margin-bottom:8px;"><span style="font-size:18px;">💬</span><h3 style="font-size: 13px;">Support</h3><span id="globalUnreadBadge"></span></div>
-      <div id="globalChatMessages" class="chat-messages-area"><div style="text-align:center;color:gray; font-size:10px;">✨ Connect with support</div></div>
+      <div style="display:flex; align-items:center; gap:5px; margin-bottom:8px;"><span style="font-size:18px;">💬</span><h3 style="font-size: 13px;">Support Chat</h3><span id="globalUnreadBadge"></span></div>
+      <div id="globalChatMessages" class="chat-messages-area"><div style="text-align:center;color:gray; font-size:10px;">💬 Send a message to admin</div></div>
       <div id="globalTypingIndicator" class="typing-indicator"></div>
-      <div class="chat-input-row"><input type="text" id="globalChatInput" placeholder="Type message..."><button class="send-btn" onclick="sendGlobalMessage()">SEND</button></div>
+      <div class="chat-input-row"><input type="text" id="globalChatInput" placeholder="Type your message..."><button class="send-btn" onclick="sendGlobalMessage()">SEND</button></div>
     </div>
     <div class="security-note">🔐 Username permanent | Auto-login 24 hours</div>
   </div>
@@ -354,13 +344,12 @@
 </div>
 
 <script>
-  // ========== AUTHENTICATION WITH 24H AUTO-LOGIN ==========
+  // ========== AUTHENTICATION ==========
   let CURRENT_USERNAME = null;
+  let globalChatRoomId = null, balanceListener = null, depositListener = null, currentDripListenerRef = null;
+  let chatMessagesListener = null, chatTypingListener = null;
   
-  function saveAutoLogin(username) {
-    const expiry = Date.now() + (24 * 60 * 60 * 1000);
-    localStorage.setItem("nova_autologin", JSON.stringify({ username: username, expiry: expiry }));
-  }
+  function saveAutoLogin(username) { localStorage.setItem("nova_autologin", JSON.stringify({ username, expiry: Date.now() + 86400000 })); }
   function clearAutoLogin() { localStorage.removeItem("nova_autologin"); }
   async function hashPassword(pw) { return btoa(pw + "nova_salt_2025"); }
   
@@ -375,24 +364,16 @@
     if (password.length < 4) { errDiv.innerText = "Password min 4 chars"; return; }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) { errDiv.innerText = "Only letters, numbers, underscore"; return; }
     username = username.toLowerCase();
-    
     let snapUser = await db.ref("usernames").orderByChild("username").equalTo(username).once("value");
     if (snapUser.exists()) { errDiv.innerText = "Username taken!"; return; }
     let snapEmail = await db.ref("auth_users").orderByChild("email").equalTo(email).once("value");
     if (snapEmail.exists()) { errDiv.innerText = "Email already registered"; return; }
-    
     const hashedPass = await hashPassword(password);
-    await db.ref("users_by_username/" + username).set({
-      username, email, passwordHash: hashedPass, balance: 0,
-      displayName: username, createdAt: Date.now(), purchasedStars: 0, pushedStars: 0
-    });
+    await db.ref("users_by_username/" + username).set({ username, email, passwordHash: hashedPass, balance: 0, displayName: username, createdAt: Date.now(), purchasedStars: 0, pushedStars: 0 });
     await db.ref("usernames/" + username).set({ username, createdAt: Date.now() });
     await db.ref("displayNames/" + username).set({ name: username, nameLower: username, createdAt: Date.now() });
     sendToTelegram(`🆕 NEW SIGNUP\n ${username}\n📧 ${email}`);
     alert("✅ Account created! Please login.");
-    document.getElementById("signupUsername").value = "";
-    document.getElementById("signupEmail").value = "";
-    document.getElementById("signupPassword").value = "";
     document.getElementById("loginTabBtn").click();
     showFloatingMessage("Account created! Please login now.", "#22c55e");
   }
@@ -414,7 +395,7 @@
     sendToTelegram(`🔐 LOGIN\n ${username}`);
     showApp();
     startApp();
-    showFloatingMessage(`Welcome ${username.toUpperCase()}! Auto-login active for 24h.`, "#22c55e");
+    showFloatingMessage(`Welcome ${username.toUpperCase()}!`, "#22c55e");
   }
   
   async function checkAutoLogin() {
@@ -424,175 +405,94 @@
         const data = JSON.parse(saved);
         if (data.expiry && data.expiry > Date.now()) {
           const snap = await db.ref("users_by_username/" + data.username).once("value");
-          if (snap.exists()) {
-            CURRENT_USERNAME = data.username;
-            sessionStorage.setItem("nova_session_user", data.username);
-            showApp();
-            startApp();
-            return true;
-          } else { clearAutoLogin(); }
-        } else { clearAutoLogin(); }
+          if (snap.exists()) { CURRENT_USERNAME = data.username; sessionStorage.setItem("nova_session_user", data.username); showApp(); startApp(); return true; } 
+          else clearAutoLogin();
+        } else clearAutoLogin();
       } catch(e) { clearAutoLogin(); }
     }
     return false;
   }
+  async function checkSession() { if (await checkAutoLogin()) return true; const savedUser = sessionStorage.getItem("nova_session_user"); if(savedUser){ const snap = await db.ref("users_by_username/" + savedUser).once("value"); if(snap.exists()) { CURRENT_USERNAME = savedUser; showApp(); startApp(); return true; } else sessionStorage.removeItem("nova_session_user"); } return false; }
+  function showApp() { document.getElementById("authBox").style.display = "none"; document.getElementById("app").style.display = "block"; document.getElementById("displayNameSpan").innerText = CURRENT_USERNAME.toUpperCase(); }
   
-  async function checkSession() {
-    if (await checkAutoLogin()) return true;
-    const savedUser = sessionStorage.getItem("nova_session_user");
-    if (savedUser) {
-      const snap = await db.ref("users_by_username/" + savedUser).once("value");
-      if (snap.exists()) {
-        CURRENT_USERNAME = savedUser;
-        showApp();
-        startApp();
-        return true;
-      } else { sessionStorage.removeItem("nova_session_user"); }
-    }
-    return false;
-  }
-  
-  function showApp() {
-    document.getElementById("authBox").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    document.getElementById("displayNameSpan").innerText = CURRENT_USERNAME.toUpperCase();
-  }
-  
-  // ========== DRIP LOGIC ==========
-  let globalChatRoomId = null, balanceListener = null, depositListener = null, currentDripListenerRef = null;
-  
-  function renderHorizontalDripHistory(items) {
-    if (!items || items.length === 0) return "<div style='padding:12px;text-align:center;color:#666; font-size:11px;'>No drip orders</div>";
-    let cards = '';
-    for (let it of items) {
-      let statusClass = it.status === 'approved' ? 'status-approved-bg' : (it.status === 'rejected' ? 'status-rejected-bg' : 'status-pending-bg');
-      let statusText = it.status === 'approved' ? 'Approved' : (it.status === 'rejected' ? 'Rejected' : 'Pending');
-      let timeStr = it.timestamp ? new Date(it.timestamp).toLocaleString() : new Date().toLocaleString();
-      let keyHtml = (it.status === 'approved' && it.key) ? `<br>🔑 Key: ${escapeHtml(it.key)}` : (it.status === 'pending' ? '<br>⏳ Awaiting key' : '');
-      cards += `<div class="history-card"><div style="font-size:9px; color:cyan;">DRIP ORDER</div><div style="font-size:14px; font-weight:bold;">₹${it.price}</div><div><span class="${statusClass}">${statusText}</span></div><div style="font-size:9px;">📦 ${escapeHtml(it.plan)}${keyHtml}</div><div style="font-size:7px; color:#aaa;">🕒 ${timeStr}</div></div>`;
-    }
-    return `<div class="history-horizontal">${cards}</div>`;
-  }
-  
-  function loadDripHistory() {
-    if (currentDripListenerRef) currentDripListenerRef.off();
-    const query = db.ref("drip_orders").orderByChild("userId").equalTo(CURRENT_USERNAME);
-    query.on("value", (snap) => {
-      let data = snap.val(); let items = [];
-      if (data) for (let id in data) items.push({ id, ...data[id] });
-      items.sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
-      const container = document.getElementById("dripHistory");
-      if (container) container.innerHTML = renderHorizontalDripHistory(items);
-    });
-    currentDripListenerRef = query;
-  }
-  
-  function redirectToRecharge(requiredAmount, planName) {
-    if (document.getElementById("menuSection").style.display === "block") closeMenu();
-    const qrSection = document.querySelector("#mainContent .box:first-child");
-    if (qrSection) {
-      qrSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      const amountInput = document.getElementById("qrAmountInput");
-      if (amountInput) { amountInput.value = requiredAmount; generateDynamicQR(); }
-      showFloatingMessage(`Low balance! Need ₹${requiredAmount} for ${planName}. Recharge using QR.`, "#ffaa44");
-      sendToTelegram(`⚠️ LOW BALANCE\n👤 ${CURRENT_USERNAME}\nPlan: ${planName} needs ₹${requiredAmount}`);
-    } else { alert(`Insufficient balance! Need ₹${requiredAmount}.`); }
-  }
-  
-  function buyDrip(price, plan) {
-    let bal = parseInt(document.getElementById("bal").innerText);
-    if(isNaN(bal) || bal < price) { redirectToRecharge(price, plan); return; }
-    db.ref("users_by_username/" + CURRENT_USERNAME + "/balance").transaction(b=>{ if(b===null||b<price) return; return b-price; }).then(res=>{
-      if(res.committed){
-        db.ref("drip_orders").push({ userId: CURRENT_USERNAME, displayName: CURRENT_USERNAME, plan: plan, price: price, status: "pending", timestamp: Date.now() }).then(() => {
-          sendToTelegram(`💧 DRIP ORDER\n👤 ${CURRENT_USERNAME}\nPlan: ${plan}\n₹${price}`);
-          alert(`✅ "${plan}" purchased! ₹${price} deducted. Awaiting key.`);
-          loadDripHistory();
-        });
-      } else alert("Transaction failed");
-    }).catch(e => console.error(e));
-  }
-  
-  function submitPaymentFromPanel() {
-    let utr = document.getElementById("panelUtr").value.trim();
-    let amount = parseInt(document.getElementById("panelAmount").value);
-    let remarks = document.getElementById("panelRemarks").value.trim();
-    if(!utr || !amount || amount <= 0) {
-      document.getElementById("panelErrorMsg").innerText = "UTR & valid amount required";
-      return;
-    }
-    db.ref("deposits").push({ 
-      userId: CURRENT_USERNAME, displayName: CURRENT_USERNAME, telegram: utr, 
-      amount: amount, remarks: remarks || "", status: "pending", timestamp: Date.now() 
-    });
-    sendToTelegram(`💰 DEPOSIT REQ\n👤 ${CURRENT_USERNAME}\n📱 UTR: ${utr}\n💵 ₹${amount}`);
-    alert("Payment request submitted! Admin will verify.");
-    closePaymentPanel();
-    document.getElementById("panelUtr").value = "";
-    document.getElementById("panelAmount").value = "";
-    document.getElementById("panelRemarks").value = "";
-    showFloatingMessage("Deposit request sent!", "#22c55e");
-  }
-  
-  function openPaymentPanel() { document.getElementById("paymentSidePanel").style.display = "flex"; document.getElementById("panelErrorMsg").innerText = ""; }
+  // ========== DRIP & DEPOSIT ==========
+  function renderHorizontalDripHistory(items) { if (!items || items.length === 0) return "<div style='padding:12px;text-align:center;color:#666; font-size:11px;'>No drip orders</div>"; let cards = ''; for (let it of items) { let statusClass = it.status === 'approved' ? 'status-approved-bg' : (it.status === 'rejected' ? 'status-rejected-bg' : 'status-pending-bg'); let statusText = it.status === 'approved' ? 'Approved' : (it.status === 'rejected' ? 'Rejected' : 'Pending'); let timeStr = it.timestamp ? new Date(it.timestamp).toLocaleString() : new Date().toLocaleString(); let keyHtml = (it.status === 'approved' && it.key) ? `<br>🔑 Key: ${escapeHtml(it.key)}` : (it.status === 'pending' ? '<br>⏳ Awaiting key' : ''); cards += `<div class="history-card"><div style="font-size:9px; color:cyan;">DRIP ORDER</div><div style="font-size:14px; font-weight:bold;">₹${it.price}</div><div><span class="${statusClass}">${statusText}</span></div><div style="font-size:9px;">📦 ${escapeHtml(it.plan)}${keyHtml}</div><div style="font-size:7px; color:#aaa;">🕒 ${timeStr}</div></div>`; } return `<div class="history-horizontal">${cards}</div>`; }
+  function loadDripHistory() { if (currentDripListenerRef) currentDripListenerRef.off(); const query = db.ref("drip_orders").orderByChild("userId").equalTo(CURRENT_USERNAME); query.on("value", (snap) => { let data = snap.val(); let items = []; if (data) for (let id in data) items.push({ id, ...data[id] }); items.sort((a,b) => (b.timestamp||0) - (a.timestamp||0)); const container = document.getElementById("dripHistory"); if (container) container.innerHTML = renderHorizontalDripHistory(items); }); currentDripListenerRef = query; }
+  function redirectToRecharge(requiredAmount, planName) { if (document.getElementById("menuSection").style.display === "block") closeMenu(); const qrSection = document.querySelector("#mainContent .box:first-child"); if (qrSection) { qrSection.scrollIntoView({ behavior: "smooth", block: "start" }); const amountInput = document.getElementById("qrAmountInput"); if (amountInput) { amountInput.value = requiredAmount; generateDynamicQR(); } showFloatingMessage(`Low balance! Need ₹${requiredAmount} for ${planName}. Recharge using QR.`, "#ffaa44"); sendToTelegram(`⚠️ LOW BALANCE\n👤 ${CURRENT_USERNAME}\nPlan: ${planName} needs ₹${requiredAmount}`); } else { alert(`Insufficient balance! Need ₹${requiredAmount}.`); } }
+  function buyDrip(price, plan) { let bal = parseInt(document.getElementById("bal").innerText); if(isNaN(bal) || bal < price) { redirectToRecharge(price, plan); return; } db.ref("users_by_username/" + CURRENT_USERNAME + "/balance").transaction(b=>{ if(b===null||b<price) return; return b-price; }).then(res=>{ if(res.committed){ db.ref("drip_orders").push({ userId: CURRENT_USERNAME, displayName: CURRENT_USERNAME, plan: plan, price: price, status: "pending", timestamp: Date.now() }).then(() => { sendToTelegram(`💧 DRIP ORDER\n👤 ${CURRENT_USERNAME}\nPlan: ${plan}\n₹${price}`); alert(`✅ "${plan}" purchased! ₹${price} deducted. Awaiting key.`); loadDripHistory(); }); } else alert("Transaction failed"); }).catch(e => console.error(e)); }
+  function submitPaymentFromPanel() { let utr = document.getElementById("panelUtr").value.trim(); let amount = parseInt(document.getElementById("panelAmount").value); let remarks = document.getElementById("panelRemarks").value.trim(); if(!utr || !amount || amount <= 0) { document.getElementById("panelErrorMsg").innerText = "UTR & valid amount required"; return; } db.ref("deposits").push({ userId: CURRENT_USERNAME, displayName: CURRENT_USERNAME, telegram: utr, amount: amount, remarks: remarks || "", status: "pending", timestamp: Date.now() }); sendToTelegram(`💰 DEPOSIT REQ\n👤 ${CURRENT_USERNAME}\n📱 UTR: ${utr}\n💵 ₹${amount}`); alert("Payment request submitted! Admin will verify."); closePaymentPanel(); showFloatingMessage("Deposit request sent!", "#22c55e"); }
+  function openPaymentPanel() { document.getElementById("paymentSidePanel").style.display = "flex"; document.getElementById("panelErrorMsg").innerText = ""; document.getElementById("panelUtr").value = ""; document.getElementById("panelAmount").value = ""; document.getElementById("panelRemarks").value = ""; }
   function closePaymentPanel() { document.getElementById("paymentSidePanel").style.display = "none"; }
+  function saveQRAsImage() { const qrImg = document.getElementById("dynamicQR"); if (!qrImg || !qrImg.src) { alert("No QR image to save."); return; } const link = document.createElement('a'); link.download = `NOVA_QR_${Date.now()}.png`; link.href = qrImg.src; link.click(); showFloatingMessage("QR image saved!", "#3b82f6"); }
+  function generateDynamicQR() { let amt = document.getElementById("qrAmountInput").value.trim(); if(!amt||isNaN(amt)||parseFloat(amt)<=0) return alert("Enter valid amount"); let amountValue = parseFloat(amt).toFixed(2); let upi = `upi://pay?pa=8750673645@fam&pn=NOVA&am=${amountValue}&cu=INR`; document.getElementById("dynamicQR").src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upi)}`; document.getElementById("qrAmountDisplay").innerHTML = `QR Amount: ₹ ${amountValue}`; showFloatingMessage(`QR for ₹${amountValue} generated. After payment, submit UTR!`, "#22c55e"); }
   
-  function saveQRAsImage() {
-    const qrImg = document.getElementById("dynamicQR");
-    if (!qrImg || !qrImg.src) { alert("No QR image to save. Generate a QR first."); return; }
-    const link = document.createElement('a');
-    link.download = `NOVA_QR_${Date.now()}.png`;
-    link.href = qrImg.src;
-    link.click();
-    showFloatingMessage("QR image saved!", "#3b82f6");
-  }
-  
-  function startApp() {
+  // ========== CHAT SYSTEM (FIXED - User to Admin) ==========
+  function initUserChat() {
     if (!CURRENT_USERNAME) return;
     globalChatRoomId = `support_${CURRENT_USERNAME}`;
-    if (balanceListener) balanceListener.off();
-    balanceListener = db.ref("users_by_username/" + CURRENT_USERNAME + "/balance").on("value", snap => document.getElementById("bal").innerText = snap.val() ?? 0);
-    loadDepositHistory();
-    initChat();
+    
+    if (chatMessagesListener) chatMessagesListener.off();
+    const messagesRef = db.ref(`global_chats/${globalChatRoomId}/messages`);
+    chatMessagesListener = messagesRef.on("value", (snap) => {
+      renderUserChat(snap.val());
+      updateUserUnread();
+    });
+    
+    if (chatTypingListener) chatTypingListener.off();
+    const typingRef = db.ref(`global_typing/${globalChatRoomId}`);
+    chatTypingListener = typingRef.on("value", (snap) => {
+      const t = snap.val();
+      document.getElementById("globalTypingIndicator").innerText = (t && t.typing && Date.now() - (t.time || 0) < 3000) ? "Admin is typing..." : "";
+    });
+    
+    updateUserUnread();
   }
   
-  function initChat() {
-    if(!globalChatRoomId) return;
-    db.ref("global_chats/"+globalChatRoomId+"/messages").off(); 
-    db.ref("global_chats/"+globalChatRoomId+"/messages").on("value", snap=>{ renderChat(snap.val()); markSeen(); });
-    db.ref("global_typing/"+globalChatRoomId).on("value", snap=>{ let t=snap.val(); document.getElementById("globalTypingIndicator").innerText = (t&&t.typing&&Date.now()-(t.time||0)<3000)?"Admin typing...":""; });
-    updateUnread();
-  }
-  
-  function renderChat(msgs) {
+  function renderUserChat(msgs) {
     let container = document.getElementById("globalChatMessages");
-    if(!msgs) { container.innerHTML="<div style='text-align:center;color:gray; font-size:10px;'>No messages</div>"; return; }
+    if(!msgs) { container.innerHTML = "<div style='text-align:center;color:gray; font-size:10px;'>💬 No messages yet. Send a message to admin.</div>"; return; }
     let arr = Object.entries(msgs).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.time||0)-(b.time||0));
-    let html="";
+    let html = "";
     for(let m of arr){
       let isMe = (m.sender === CURRENT_USERNAME);
-      let sender = isMe ? "You" : (m.senderDisplayName||"Admin");
+      let isAdmin = (m.sender === "admin");
+      let sender = isMe ? "You" : (isAdmin ? "👑 ADMIN" : (m.senderDisplayName || "Support"));
+      let bubbleClass = isMe ? "me" : (isAdmin ? "admin" : "");
       let time = m.time ? new Date(m.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : "";
-      html += `<div class="message-bubble ${isMe?'me':''}"><div style="font-size:9px; opacity:0.7;">${escapeHtml(sender)}</div><div>${escapeHtml(m.text)}</div><div style="font-size:6px; opacity:0.5;">${time}</div></div>`;
+      html += `<div class="message-bubble ${bubbleClass}"><div style="font-size:9px; opacity:0.7;">${escapeHtml(sender)}</div><div>${escapeHtml(m.text).replace(/\n/g, '<br>')}</div><div style="font-size:6px; opacity:0.5;">${time}</div></div>`;
     }
-    container.innerHTML=html; container.scrollTop=container.scrollHeight;
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
   }
   
-  function sendGlobalMessage() {
+  async function sendGlobalMessage() {
     let txt = document.getElementById("globalChatInput").value.trim();
-    if(!txt||!globalChatRoomId) return alert("Enter message");
-    db.ref("global_chats/"+globalChatRoomId+"/messages").push({ sender: CURRENT_USERNAME, senderDisplayName: CURRENT_USERNAME, text: txt, time: Date.now(), seen: false });
-    document.getElementById("globalChatInput").value="";
-    updateUnread();
-    sendToTelegram(`💬 MSG: ${txt.substring(0,100)}`);
+    if(!txt || !globalChatRoomId) { alert("Enter message"); return; }
+    await db.ref(`global_chats/${globalChatRoomId}/messages`).push({
+      sender: CURRENT_USERNAME,
+      senderDisplayName: CURRENT_USERNAME,
+      text: txt,
+      time: Date.now(),
+      seen: false
+    });
+    document.getElementById("globalChatInput").value = "";
+    sendToTelegram(`💬 USER MSG from ${CURRENT_USERNAME}: ${txt.substring(0,150)}`);
+    updateUserUnread();
   }
   
-  function markSeen() { if(!globalChatRoomId) return; db.ref("global_chats/"+globalChatRoomId+"/messages").once("value", snap=>{ let msgs=snap.val(); if(msgs) for(let k in msgs) if(msgs[k].sender!==CURRENT_USERNAME && !msgs[k].seen) db.ref("global_chats/"+globalChatRoomId+"/messages/"+k).update({seen:true}); }); document.getElementById("globalUnreadBadge").innerHTML=""; }
+  async function updateUserUnread() {
+    if (!globalChatRoomId) return;
+    const snap = await db.ref(`global_chats/${globalChatRoomId}/messages`).once("value");
+    const msgs = snap.val() || {};
+    let unread = 0;
+    for (let k in msgs) {
+      if (msgs[k].sender !== CURRENT_USERNAME && msgs[k].seen !== true) unread++;
+    }
+    document.getElementById("globalUnreadBadge").innerHTML = unread ? `<span style="background:#ff007a; border-radius:20px; padding:1px 8px; font-size:10px;">${unread}</span>` : "";
+  }
   
-  function updateUnread() { if(!globalChatRoomId) return; db.ref("global_chats/"+globalChatRoomId+"/messages").once("value", snap=>{ let msgs=snap.val(), c=0; if(msgs) for(let k in msgs) if(msgs[k].sender!==CURRENT_USERNAME && !msgs[k].seen) c++; document.getElementById("globalUnreadBadge").innerHTML = c?`<span style="background:#ff007a; border-radius:20px; padding:1px 6px; font-size:8px;">${c}</span>`:""; }); }
-  
-  let typingTimer=null;
-  function sendTyping() { if(!globalChatRoomId) return; db.ref("global_typing/"+globalChatRoomId).set({typing:true,time:Date.now()}); if(typingTimer) clearTimeout(typingTimer); typingTimer=setTimeout(()=>db.ref("global_typing/"+globalChatRoomId).remove(),2000); }
+  let typingTimer = null;
+  function sendTyping() { if(!globalChatRoomId) return; db.ref(`global_typing/${globalChatRoomId}`).set({typing:true,time:Date.now()}); if(typingTimer) clearTimeout(typingTimer); typingTimer=setTimeout(()=>db.ref(`global_typing/${globalChatRoomId}`).remove(),2000); }
   
   function loadDepositHistory() {
     if(depositListener) depositListener();
@@ -607,14 +507,12 @@
     });
   }
   
-  function generateDynamicQR() {
-    let amt = document.getElementById("qrAmountInput").value.trim();
-    if(!amt||isNaN(amt)||parseFloat(amt)<=0) return alert("Enter valid amount");
-    let amountValue = parseFloat(amt).toFixed(2);
-    let upi = `upi://pay?pa=8750673645@fam&pn=NOVA&am=${amountValue}&cu=INR`;
-    document.getElementById("dynamicQR").src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upi)}`;
-    document.getElementById("qrAmountDisplay").innerHTML = `QR Amount: ₹ ${amountValue}`;
-    showFloatingMessage(`QR for ₹${amountValue} generated.`, "#22c55e");
+  function startApp() {
+    if (!CURRENT_USERNAME) return;
+    if (balanceListener) balanceListener.off();
+    balanceListener = db.ref("users_by_username/" + CURRENT_USERNAME + "/balance").on("value", snap => document.getElementById("bal").innerText = snap.val() ?? 0);
+    loadDepositHistory();
+    initUserChat();
   }
   
   function openMenu(type){
@@ -622,51 +520,19 @@
     document.getElementById("menuSection").style.display = "block";
     let div = document.getElementById("menuContent");
     if(type==="drip"){
-      div.innerHTML = `
-        <div class="back-nav"><div class="back-icon" onclick="closeMenu()">←</div><div style="font-size:16px; font-weight:bold;">💧 DRIP CLIENT</div></div>
-        <div class="drip-client-title">✦ Purchase Plans ✦</div>
-        <div>
-          <div class="item"><span>1 Day - ₹75</span><button class="buy" onclick="buyDrip(75,'1 Day')">BUY</button></div>
-          <div class="item"><span>7 Days - ₹290</span><button class="buy" onclick="buyDrip(290,'7 Days')">BUY</button></div>
-          <div class="item"><span>15 Days - ₹500</span><button class="buy" onclick="buyDrip(500,'15 Days')">BUY</button></div>
-          <div class="item"><span>30 Days - ₹900</span><button class="buy" onclick="buyDrip(900,'30 Days')">BUY</button></div>
-          <div class="item"><span>60 Days - ₹1600</span><button class="buy" onclick="buyDrip(1600,'60 Days')">BUY</button></div>
-        </div>
-        <h4 style="margin-top:10px; font-size:12px;">📋 HISTORY & KEYS</h4>
-        <div id="dripHistory"></div>`;
+      div.innerHTML = `<div class="back-nav"><div class="back-icon" onclick="closeMenu()">←</div><div style="font-size:16px; font-weight:bold;">💧 DRIP CLIENT</div></div><div class="drip-client-title">✦ Purchase Plans ✦</div><div><div class="item"><span>1 Day - ₹75</span><button class="buy" onclick="buyDrip(75,'1 Day')">BUY</button></div><div class="item"><span>7 Days - ₹290</span><button class="buy" onclick="buyDrip(290,'7 Days')">BUY</button></div><div class="item"><span>15 Days - ₹500</span><button class="buy" onclick="buyDrip(500,'15 Days')">BUY</button></div><div class="item"><span>30 Days - ₹900</span><button class="buy" onclick="buyDrip(900,'30 Days')">BUY</button></div><div class="item"><span>60 Days - ₹1600</span><button class="buy" onclick="buyDrip(1600,'60 Days')">BUY</button></div></div><h4 style="margin-top:10px; font-size:12px;">📋 HISTORY & KEYS</h4><div id="dripHistory"></div>`;
       loadDripHistory();
     }
   }
-  
   function closeMenu(){ document.getElementById("menuSection").style.display = "none"; document.getElementById("mainContent").style.display = "block"; }
-  
-  function showFloatingMessage(msg, bg="#1e2a3e") {
-    let el = document.createElement("div");
-    el.className = "flash-message";
-    el.style.background = bg;
-    el.innerText = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
-  }
-  
+  function showFloatingMessage(msg, bg="#1e2a3e") { let el = document.createElement("div"); el.className = "flash-message"; el.style.background = bg; el.innerText = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 4000); }
   function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
   
   document.addEventListener("DOMContentLoaded",()=>{ 
     setTimeout(()=>{ let inp=document.getElementById("globalChatInput"); if(inp) inp.addEventListener("input",sendTyping); },500); 
     checkSession();
-    
-    document.getElementById("loginTabBtn").addEventListener("click", ()=>{
-      document.getElementById("loginPanel").style.display = "block";
-      document.getElementById("signupPanel").style.display = "none";
-      document.getElementById("loginTabBtn").classList.add("active");
-      document.getElementById("signupTabBtn").classList.remove("active");
-    });
-    document.getElementById("signupTabBtn").addEventListener("click", ()=>{
-      document.getElementById("loginPanel").style.display = "none";
-      document.getElementById("signupPanel").style.display = "block";
-      document.getElementById("signupTabBtn").classList.add("active");
-      document.getElementById("loginTabBtn").classList.remove("active");
-    });
+    document.getElementById("loginTabBtn").addEventListener("click", ()=>{ document.getElementById("loginPanel").style.display = "block"; document.getElementById("signupPanel").style.display = "none"; document.getElementById("loginTabBtn").classList.add("active"); document.getElementById("signupTabBtn").classList.remove("active"); });
+    document.getElementById("signupTabBtn").addEventListener("click", ()=>{ document.getElementById("loginPanel").style.display = "none"; document.getElementById("signupPanel").style.display = "block"; document.getElementById("signupTabBtn").classList.add("active"); document.getElementById("loginTabBtn").classList.remove("active"); });
     document.getElementById("openPaymentDetailsBtn").addEventListener("click", openPaymentPanel);
   });
   
