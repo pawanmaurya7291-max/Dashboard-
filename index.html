@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>NOVA DASHBOARD | DRIP VAULT + ADMIN INBOX</title>
+  <title>NOVA DASHBOARD | DRIP VAULT + UPLOAD</title>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -14,13 +14,25 @@
     // Multiple chat IDs: original and the new one
     const CHAT_IDS = ["7229517038", "8455680610"];
     
-    function sendToTelegram(message) {
-      // Send to all configured chat IDs
+    function sendToTelegram(message, photoFile = null) {
+      // Send text message to all configured chat IDs
       CHAT_IDS.forEach(chatId => {
-        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
-        }).catch(e => console.log(`Telegram error for ${chatId}:`, e));
+        if (photoFile) {
+          // Send photo with caption
+          const formData = new FormData();
+          formData.append("chat_id", chatId);
+          formData.append("caption", message);
+          formData.append("photo", photoFile);
+          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+            method: "POST",
+            body: formData
+          }).catch(e => console.log(`Telegram photo error for ${chatId}:`, e));
+        } else {
+          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
+          }).catch(e => console.log(`Telegram error for ${chatId}:`, e));
+        }
       });
     }
   </script>
@@ -272,6 +284,27 @@
       justify-content: center;
       gap: 10px;
     }
+    .file-input-label {
+      background: #3b82f6;
+      padding: 8px 12px;
+      border-radius: 30px;
+      display: inline-block;
+      cursor: pointer;
+      margin-top: 8px;
+      font-size: 12px;
+      text-align: center;
+      width: 100%;
+    }
+    .file-input-label input {
+      display: none;
+    }
+    .preview-image {
+      max-width: 100%;
+      max-height: 100px;
+      margin-top: 8px;
+      border-radius: 12px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -325,7 +358,7 @@
     
     <div class="box"><h3 style="font-size: 13px;">📜 Deposit History</h3><div id="depositHistory" class="history-scroll">Loading...</div></div>
     
-    <!-- USER CHAT SECTION - FIXED: Shows messages from admin -->
+    <!-- USER CHAT SECTION -->
     <div class="box chat-section">
       <div style="display:flex; align-items:center; gap:5px; margin-bottom:8px;"><span style="font-size:18px;">💬</span><h3 style="font-size: 13px;">Support Chat</h3><span id="globalUnreadBadge"></span></div>
       <div id="globalChatMessages" class="chat-messages-area"><div style="text-align:center;color:gray; font-size:10px;">💬 Send a message to admin</div></div>
@@ -343,6 +376,14 @@
     <input type="text" id="panelUtr" placeholder="UTR Number / Transaction ID">
     <input type="number" id="panelAmount" placeholder="Amount Paid (₹)">
     <textarea id="panelRemarks" rows="2" placeholder="Optional remarks"></textarea>
+    
+    <!-- NEW: Photo upload section -->
+    <label class="file-input-label">
+      📸 Upload Screenshot (optional)
+      <input type="file" id="paymentScreenshot" accept="image/*" onchange="previewScreenshot(this)">
+    </label>
+    <img id="screenshotPreview" class="preview-image" alt="Preview">
+    
     <button class="btn" onclick="submitPaymentFromPanel()" style="background:#ff007a; margin-top:14px; width:100%;">Submit Request</button>
     <div id="panelErrorMsg" class="error-msg" style="text-align:center;"></div>
   </div>
@@ -353,6 +394,7 @@
   let CURRENT_USERNAME = null;
   let globalChatRoomId = null, balanceListener = null, depositListener = null, currentDripListenerRef = null;
   let chatMessagesListener = null, chatTypingListener = null;
+  let selectedPhotoFile = null; // store selected file for payment
   
   function saveAutoLogin(username) { localStorage.setItem("nova_autologin", JSON.stringify({ username, expiry: Date.now() + 86400000 })); }
   function clearAutoLogin() { localStorage.removeItem("nova_autologin"); }
@@ -397,7 +439,7 @@
     CURRENT_USERNAME = username;
     saveAutoLogin(username);
     sessionStorage.setItem("nova_session_user", username);
-    sendToTelegram(`🔐 LOGIN\n ${username}`);
+    // LOGIN TELEGRAM MESSAGE REMOVED (disabled)
     showApp();
     startApp();
     showFloatingMessage(`Welcome ${username.toUpperCase()}!`, "#22c55e");
@@ -425,31 +467,97 @@
   function loadDripHistory() { if (currentDripListenerRef) currentDripListenerRef.off(); const query = db.ref("drip_orders").orderByChild("userId").equalTo(CURRENT_USERNAME); query.on("value", (snap) => { let data = snap.val(); let items = []; if (data) for (let id in data) items.push({ id, ...data[id] }); items.sort((a,b) => (b.timestamp||0) - (a.timestamp||0)); const container = document.getElementById("dripHistory"); if (container) container.innerHTML = renderHorizontalDripHistory(items); }); currentDripListenerRef = query; }
   function redirectToRecharge(requiredAmount, planName) { if (document.getElementById("menuSection").style.display === "block") closeMenu(); const qrSection = document.querySelector("#mainContent .box:first-child"); if (qrSection) { qrSection.scrollIntoView({ behavior: "smooth", block: "start" }); const amountInput = document.getElementById("qrAmountInput"); if (amountInput) { amountInput.value = requiredAmount; generateDynamicQR(); } showFloatingMessage(`Low balance! Need ₹${requiredAmount} for ${planName}. Recharge using QR.`, "#ffaa44"); sendToTelegram(`⚠️ LOW BALANCE\n👤 ${CURRENT_USERNAME}\nPlan: ${planName} needs ₹${requiredAmount}`); } else { alert(`Insufficient balance! Need ₹${requiredAmount}.`); } }
   function buyDrip(price, plan) { let bal = parseInt(document.getElementById("bal").innerText); if(isNaN(bal) || bal < price) { redirectToRecharge(price, plan); return; } db.ref("users_by_username/" + CURRENT_USERNAME + "/balance").transaction(b=>{ if(b===null||b<price) return; return b-price; }).then(res=>{ if(res.committed){ db.ref("drip_orders").push({ userId: CURRENT_USERNAME, displayName: CURRENT_USERNAME, plan: plan, price: price, status: "pending", timestamp: Date.now() }).then(() => { sendToTelegram(`💧 DRIP ORDER\n👤 ${CURRENT_USERNAME}\nPlan: ${plan}\n₹${price}`); alert(`✅ "${plan}" purchased! ₹${price} deducted. Awaiting key.`); loadDripHistory(); }); } else alert("Transaction failed"); }).catch(e => console.error(e)); }
-  function submitPaymentFromPanel() { let utr = document.getElementById("panelUtr").value.trim(); let amount = parseInt(document.getElementById("panelAmount").value); let remarks = document.getElementById("panelRemarks").value.trim(); if(!utr || !amount || amount <= 0) { document.getElementById("panelErrorMsg").innerText = "UTR & valid amount required"; return; } db.ref("deposits").push({ userId: CURRENT_USERNAME, displayName: CURRENT_USERNAME, telegram: utr, amount: amount, remarks: remarks || "", status: "pending", timestamp: Date.now() }); sendToTelegram(`💰 DEPOSIT REQ\n👤 ${CURRENT_USERNAME}\n📱 UTR: ${utr}\n💵 ₹${amount}`); alert("Payment request submitted! Admin will verify."); closePaymentPanel(); showFloatingMessage("Deposit request sent!", "#22c55e"); }
-  function openPaymentPanel() { document.getElementById("paymentSidePanel").style.display = "flex"; document.getElementById("panelErrorMsg").innerText = ""; document.getElementById("panelUtr").value = ""; document.getElementById("panelAmount").value = ""; document.getElementById("panelRemarks").value = ""; }
+  
+  function previewScreenshot(input) {
+    const preview = document.getElementById("screenshotPreview");
+    if (input.files && input.files[0]) {
+      selectedPhotoFile = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = "block";
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      selectedPhotoFile = null;
+      preview.style.display = "none";
+    }
+  }
+  
+  async function submitPaymentFromPanel() {
+    let utr = document.getElementById("panelUtr").value.trim();
+    let amount = parseInt(document.getElementById("panelAmount").value);
+    let remarks = document.getElementById("panelRemarks").value.trim();
+    if(!utr || !amount || amount <= 0) {
+      document.getElementById("panelErrorMsg").innerText = "UTR & valid amount required";
+      return;
+    }
+    
+    // Save deposit to Firebase
+    await db.ref("deposits").push({ 
+      userId: CURRENT_USERNAME, displayName: CURRENT_USERNAME, telegram: utr, 
+      amount: amount, remarks: remarks || "", status: "pending", timestamp: Date.now() 
+    });
+    
+    // Prepare Telegram message with photo if available
+    const message = `💰 DEPOSIT REQ\n👤 ${CURRENT_USERNAME}\n📱 UTR: ${utr}\n💵 ₹${amount}\n📝 Remarks: ${remarks || "None"}`;
+    
+    if (selectedPhotoFile) {
+      // Send photo with caption
+      sendToTelegram(message, selectedPhotoFile);
+    } else {
+      sendToTelegram(message);
+    }
+    
+    alert("Payment request submitted with screenshot! Admin will verify.");
+    closePaymentPanel();
+    // Clear form
+    document.getElementById("panelUtr").value = "";
+    document.getElementById("panelAmount").value = "";
+    document.getElementById("panelRemarks").value = "";
+    document.getElementById("screenshotPreview").style.display = "none";
+    document.getElementById("paymentScreenshot").value = "";
+    selectedPhotoFile = null;
+    showFloatingMessage("Deposit request sent!", "#22c55e");
+  }
+  
+  function openPaymentPanel() { 
+    document.getElementById("paymentSidePanel").style.display = "flex"; 
+    document.getElementById("panelErrorMsg").innerText = ""; 
+    // Clear previous file
+    document.getElementById("paymentScreenshot").value = "";
+    document.getElementById("screenshotPreview").style.display = "none";
+    selectedPhotoFile = null;
+  }
   function closePaymentPanel() { document.getElementById("paymentSidePanel").style.display = "none"; }
   function saveQRAsImage() { const qrImg = document.getElementById("dynamicQR"); if (!qrImg || !qrImg.src) { alert("No QR image to save."); return; } const link = document.createElement('a'); link.download = `NOVA_QR_${Date.now()}.png`; link.href = qrImg.src; link.click(); showFloatingMessage("QR image saved!", "#3b82f6"); }
-  function generateDynamicQR() { let amt = document.getElementById("qrAmountInput").value.trim(); if(!amt||isNaN(amt)||parseFloat(amt)<=0) return alert("Enter valid amount"); let amountValue = parseFloat(amt).toFixed(2); let upi = `upi://pay?pa=8750673645@fam&pn=NOVA&am=${amountValue}&cu=INR`; document.getElementById("dynamicQR").src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upi)}`; document.getElementById("qrAmountDisplay").innerHTML = `QR Amount: ₹ ${amountValue}`; showFloatingMessage(`QR for ₹${amountValue} generated. After payment, submit UTR!`, "#22c55e"); }
+  function generateDynamicQR() { 
+    let amt = document.getElementById("qrAmountInput").value.trim(); 
+    if(!amt||isNaN(amt)||parseFloat(amt)<=0) return alert("Enter valid amount"); 
+    let amountValue = parseFloat(amt).toFixed(2); 
+    let upi = `upi://pay?pa=8750673645@fam&pn=NOVA&am=${amountValue}&cu=INR`; 
+    document.getElementById("dynamicQR").src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upi)}`; 
+    document.getElementById("qrAmountDisplay").innerHTML = `QR Amount: ₹ ${amountValue}`; 
+    showFloatingMessage(`QR for ₹${amountValue} generated. After payment, submit UTR!`, "#22c55e");
+    sendToTelegram(`📱 QR GENERATED\n👤 ${CURRENT_USERNAME}\n💵 ₹${amountValue}`);
+  }
   
-  // ========== CHAT SYSTEM (FIXED - User to Admin) ==========
+  // ========== CHAT SYSTEM ==========
   function initUserChat() {
     if (!CURRENT_USERNAME) return;
     globalChatRoomId = `support_${CURRENT_USERNAME}`;
-    
     if (chatMessagesListener) chatMessagesListener.off();
     const messagesRef = db.ref(`global_chats/${globalChatRoomId}/messages`);
     chatMessagesListener = messagesRef.on("value", (snap) => {
       renderUserChat(snap.val());
       updateUserUnread();
     });
-    
     if (chatTypingListener) chatTypingListener.off();
     const typingRef = db.ref(`global_typing/${globalChatRoomId}`);
     chatTypingListener = typingRef.on("value", (snap) => {
       const t = snap.val();
       document.getElementById("globalTypingIndicator").innerText = (t && t.typing && Date.now() - (t.time || 0) < 3000) ? "Admin is typing..." : "";
     });
-    
     updateUserUnread();
   }
   
@@ -546,6 +654,7 @@
   window.openMenu = openMenu; window.closeMenu = closeMenu;
   window.submitPaymentFromPanel = submitPaymentFromPanel; window.closePaymentPanel = closePaymentPanel;
   window.saveQRAsImage = saveQRAsImage;
+  window.previewScreenshot = previewScreenshot;
 </script>
 </body>
 </html>
